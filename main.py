@@ -10,9 +10,12 @@ from updater import UpdateCheckerThread
 
 os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --no-sandbox"
 
+import sys
+import os
+
 def resource_path(relative_path: str) -> str:
     if getattr(sys, 'frozen', False):
-        base_path = os.path.dirname(sys.executable)
+        base_path = os.path.join(sys._MEIPASS, "app")
     else:
         base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
