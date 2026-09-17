@@ -20,13 +20,13 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: '3.11'
 
     - name: Install Linux system dependencies
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libxcb-xinerama0 libxkbcommon-x11-0 libgl1-mesa-glx libegl1 libopengl0 libxcb-cursor0
+        sudo apt-get install -y libgl1 libglx-mesa0 libxcb-xinerama0 libxkbcommon-x11-0 libegl1 libopengl0 libxcb-cursor0 libnss3 libasound2
 
     - name: Install Python dependencies
       run: |
@@ -43,7 +43,6 @@ jobs:
           --add-data "Theme:Theme" \
           --add-data "favicon.ico:." \
           main.py
-
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
