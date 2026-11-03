@@ -4,28 +4,42 @@ from PyQt6 import QtWidgets, QtGui, QtCore
 from PyQt6.QtCore import QUrl, QSettings, QStandardPaths
 from Theme.themes import ThemeManager
 from UI.ИТДDesktopSetings import Ui_MainWindow as Ui_SettingsWindow
+import autostart
 
 
 class SettingsDialog(QtWidgets.QMainWindow):
     theme_changed = QtCore.pyqtSignal(bool)
+
     def __init__(self, main_window):
         super().__init__(main_window)
         self.main_win = main_window
         self.ui = Ui_SettingsWindow()
         self.ui.setupUi(self)
         self.settings = QSettings("ITD_Client_Community", "ITDDesktop")
+
+        self.is_initializing = True
         self.load_settings()
+        self.is_initializing = False
+
         self.bind_events()
+
     def load_settings(self):
         default_dl = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
         download_path = self.settings.value("download_path", default_dl, type=str)
         self.ui.lineEdit.setText(download_path)
+
         is_dark = self.settings.value("dark_theme", False, type=bool)
         self.ui.checkBox.setChecked(is_dark)
+
+        # Проверка реального статуса автозагрузки в ОС
+        self.ui.checkBox_2.setChecked(autostart.is_autostart_enabled())
+
     def bind_events(self):
         self.ui.pushButton.clicked.connect(self.choose_download_dir)
         self.ui.pushButton_2.clicked.connect(self.clear_browser_data)
         self.ui.checkBox.toggled.connect(self.toggle_theme)
+        self.ui.checkBox_2.toggled.connect(self.toggle_autostart)
+
         self.ui.commandLinkButton.clicked.connect(
             lambda: QtGui.QDesktopServices.openUrl(QUrl("https://github.com/xachapyri-dev/itd_Desktop_python"))
         )
@@ -41,6 +55,7 @@ class SettingsDialog(QtWidgets.QMainWindow):
         self.ui.commandLinkButton_5.clicked.connect(
             lambda: QtGui.QDesktopServices.openUrl(QUrl("https://github.com/xachapyri-dev/itd_Desktop_python/issues"))
         )
+
     def choose_download_dir(self):
         folder = QtWidgets.QFileDialog.getExistingDirectory(
             self, "Выбрать папку для загрузок", self.ui.lineEdit.text()
@@ -48,20 +63,30 @@ class SettingsDialog(QtWidgets.QMainWindow):
         if folder:
             self.ui.lineEdit.setText(folder)
             self.settings.setValue("download_path", folder)
+
+    def toggle_autostart(self, checked: bool):
+        if self.is_initializing:
+            return
+        autostart.set_autostart(checked)
+
     def clear_browser_data(self):
         box = QtWidgets.QMessageBox(self)
         box.setWindowTitle("Подтверждение сброса")
         box.setIcon(QtWidgets.QMessageBox.Icon.Warning)
-        box.setText("Вы действительно хотите удалить все данные браузера?")
+        box.setText("Вы действительно хотите сбросить настройки и данные?")
         box.setInformativeText(
-            "Будет выполнен сброс профиля: удалятся все сохранённые сессии, аккаунты, куки и кэш.\n\n"
-            "Это действие необратимо! После сброса приложение закроется."
+            "Будут удалены данные браузера, куки, кэш, а также приложение будет убрано из автозапуска.\n\n"
+            "После сброса приложение закроется."
         )
         box.setStandardButtons(
             QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No
         )
         box.setDefaultButton(QtWidgets.QMessageBox.StandardButton.No)
+
         if box.exec() == QtWidgets.QMessageBox.StandardButton.Yes:
+            # Убираем из автозагрузки
+            autostart.set_autostart(False)
+
             self.main_win.profile.clearHttpCache()
             self.main_win.profile.cookieStore().deleteAllCookies()
             storage_path = self.main_win.profile.persistentStoragePath()
@@ -73,9 +98,13 @@ class SettingsDialog(QtWidgets.QMainWindow):
                     shutil.rmtree(cache_path, ignore_errors=True)
             except Exception as ex:
                 print(f"Ошибка удаления файлов: {ex}")
-            QtWidgets.QMessageBox.information(self, "Успешно", "Данные очищены. Приложение сейчас закроется.")
+
+            QtWidgets.QMessageBox.information(self, "Успешно", "Данные очищены. Приложение завершает работу.")
             QtWidgets.QApplication.quit()
+
     def toggle_theme(self, checked: bool):
+        if self.is_initializing:
+            return
         self.settings.setValue("dark_theme", checked)
         ThemeManager.apply_app_theme(self, checked)
         self.theme_changed.emit(checked)

@@ -1,6 +1,7 @@
 import json
 import urllib.request
 from PyQt6 import QtCore
+
 try:
     from Data.config import version as CURRENT_VERSION
 except ImportError:
@@ -9,43 +10,39 @@ except ImportError:
 
 class UpdateCheckerThread(QtCore.QThread):
     update_available = QtCore.pyqtSignal(str)
-    API_URL = "http://k90052gj.beget.tech/API/versions.json"
+
+    PRIMARY_URL = "http://k90052gj.beget.tech/API/versions.json"
+    FALLBACK_URL = "https://raw.githubusercontent.com/xachapyri-dev/VersionProgramCheck/refs/heads/main/versions.json"
+
     def run(self):
-        print(f"[Updater] Поток запущен! Локальная версия: {CURRENT_VERSION}")
+        print(f"[Updater] Поток запущен. Текущая версия: {CURRENT_VERSION}")
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "application/json"
+        }
+
+        raw_data = None
+        for url in [self.PRIMARY_URL, self.FALLBACK_URL]:
+            try:
+                print(f"[Updater] Проверка обновлений через: {url}")
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    if response.status == 200:
+                        raw_data = response.read().decode("utf-8")
+                        break
+            except Exception as ex:
+                print(f"[Updater] Ошибка источника {url}: {ex}")
+
+        if not raw_data:
+            print("[Updater] Все серверы проверки обновлений недоступны.")
+            return
+
         try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                "Accept": "application/json, text/plain, */*",
-                "Connection": "close"
-            }
-            print(f"[Updater] Отправка запроса на {self.API_URL}...")
-            req = urllib.request.Request(self.API_URL, headers=headers)
-            with urllib.request.urlopen(req, timeout=10) as response:
-                status = response.status
-                print(f"[Updater] Ответ сервера получен, статус: {status}")
-                if status != 200:
-                    print(f"[Updater] Ошибка: код ответа {status}")
-                    return
-                raw_data = response.read().decode("utf-8")
-                data = json.loads(raw_data)
-                itd_data = data.get("ITDdes", {})
-                remote_version = str(itd_data.get("version", "")).strip()
-                print(f"[Updater] Распарсенная версия на сервере: '{remote_version}'")
-                if not remote_version:
-                    print("[Updater] Версия не найдена в JSON файле!")
-                    return
-                if remote_version != CURRENT_VERSION.strip():
-                    print(f"[Updater] Версия не совпадает (на сервере: v{remote_version}, у клиента: v{CURRENT_VERSION})! Шлём сигнал в UI.")
-                    self.update_available.emit(remote_version)
-                else:
-                    print("[Updater] Версия полностью совпадает с сервером.")
+            data = json.loads(raw_data)
+            remote_version = str(data.get("ITDdes", {}).get("version", "")).strip()
+            print(f"[Updater] Версия на сервере: '{remote_version}'")
+
+            if remote_version and remote_version != CURRENT_VERSION.strip():
+                self.update_available.emit(remote_version)
         except Exception as ex:
-            print(f"[Updater] Исключение при выполнении запроса: {ex}")
-    @staticmethod
-    def is_newer(remote_v: str, local_v: str) -> bool:
-        try:
-            r_parts = [int(p) for p in remote_v.strip().lstrip('v').split('.')]
-            l_parts = [int(p) for p in local_v.strip().lstrip('v').split('.')]
-            return r_parts > l_parts
-        except Exception:
-            return remote_v != local_v
+            print(f"[Updater] Ошибка разбора JSON: {ex}")

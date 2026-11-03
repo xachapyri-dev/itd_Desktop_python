@@ -36,7 +36,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -46,7 +46,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>0</y>
+        <y>50</y>
         <width>121</width>
         <height>21</height>
        </rect>
@@ -70,7 +70,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>30</y>
+        <y>80</y>
         <width>301</width>
         <height>22</height>
        </rect>
@@ -80,7 +80,7 @@
       <property name="geometry">
        <rect>
         <x>330</x>
-        <y>30</y>
+        <y>80</y>
         <width>101</width>
         <height>24</height>
        </rect>
@@ -93,7 +93,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>60</y>
+        <y>110</y>
         <width>121</width>
         <height>21</height>
        </rect>
@@ -117,13 +117,50 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>90</y>
+        <y>140</y>
         <width>171</width>
         <height>24</height>
        </rect>
       </property>
       <property name="text">
        <string>Удалить данные браузера</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_8">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>0</y>
+        <width>121</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Приложение</string>
+      </property>
+      <property name="textFormat">
+       <enum>Qt::TextFormat::AutoText</enum>
+      </property>
+      <property name="scaledContents">
+       <bool>false</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>30</y>
+        <width>101</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Автозапуск</string>
       </property>
      </widget>
     </widget>
