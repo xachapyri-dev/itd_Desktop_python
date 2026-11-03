@@ -34,18 +34,41 @@ jobs:
         pip install pyinstaller
         pip install -r requirements.txt
 
-    - name: Build with PyInstaller
+    - name: Build with PyInstaller (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         pyinstaller --noconfirm --windowed --name "ITDDesktop" \
-          --collect-all PyQt6 \
+          --collect-all PyQt6.QtWebEngineWidgets \
+          --collect-all PyQt6.QtWebChannel \
           --add-data "Data:app/Data" \
           --add-data "QtDesigner:app/QtDesigner" \
           --add-data "Theme:app/Theme" \
           --add-data "favicon.ico:app" \
           main.py
 
-    - name: Upload Artifact
+    - name: Build with PyInstaller (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        pyinstaller --noconfirm --windowed --name "ITDDesktop" \
+          --collect-binaries PyQt6.QtWebEngineCore \
+          --collect-data PyQt6.QtWebEngineCore \
+          --collect-data PyQt6.QtWebChannel \
+          --add-data "Data:app/Data" \
+          --add-data "QtDesigner:app/QtDesigner" \
+          --add-data "Theme:app/Theme" \
+          --add-data "favicon.ico:app" \
+          main.py
+
+    - name: Upload Linux Artifact
+      if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: ITDDesktop-${{ matrix.os }}
+        name: ITDDesktop-ubuntu-latest
         path: dist/ITDDesktop/
+
+    - name: Upload macOS Artifact
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ITDDesktop-macos-latest
+        path: dist/ITDDesktop.app/
